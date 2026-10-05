@@ -1,1 +1,56 @@
-404: Not Found
+name: Terraform DEV Plan
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - terraform/**
+      - .github/workflows/terraform-dev-*.yml
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.5
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.21
+      - run: |
+          go install github.com/gruntwork-io/terragrunt@v0.55.12
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+      - uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER_DEV }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_DEV }}
+      - uses: google-github-actions/setup-gcloud@v1
+      - name: Terragrunt Plan DEV
+        working-directory: terraform/projects/dev
+        run: terragrunt run-all plan --terragrunt-non-interactive 2>&1 | tee plan-output.txt
+        env:
+          TF_VAR_project_id: telecom-dev-123
+          TF_VAR_environment: dev
+          TF_INPUT: "false"
+          TF_IN_AUTOMATION: "true"
+      - if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('plan-output.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '```\n' + plan.substring(0, 65000) + '\n```'
+            })
+      - if: always()
+        run: |
+          echo "### Terraform DEV Plan" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Plan generated successfully" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Step:** Review the plan above, then manually trigger the apply workflow" >> $GITHUB_STEP_SUMMARY
+          echo "📋 [Run DEV Apply](https://github.com/${{ github.repository }}/actions/workflows/terraform-dev-apply.yml)" >> $GITHUB_STEP_SUMMARY
