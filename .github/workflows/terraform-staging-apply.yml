@@ -24,6 +24,15 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER_STAGING }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_STAGING }}
       - uses: google-github-actions/setup-gcloud@v1
+      - name: Create Terraform Wrapper
+        run: |
+          mkdir -p /tmp/tf-wrapper
+          cat > /tmp/tf-wrapper/terraform << 'WRAPPER'
+          #!/bin/bash
+          /home/runner/work/_temp/*/terraform-bin "$@" 2>&1 | grep -v "^ prefix="
+          WRAPPER
+          chmod +x /tmp/tf-wrapper/terraform
+          echo "/tmp/tf-wrapper" >> $GITHUB_PATH
       - name: Terragrunt Apply STAGING
         working-directory: terraform/projects/staging
         run: terragrunt run-all apply --terragrunt-non-interactive -auto-approve
