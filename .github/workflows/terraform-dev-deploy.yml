@@ -18,15 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Setup Terraform Latest
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: latest
+          terraform_version: 1.8.6
       
-      - name: Install Terragrunt Latest
+      - name: Install Terragrunt
         run: |
-          TERRAGRUNT_VERSION=$(curl -s https://api.github.com/repos/gruntwork-io/terragrunt/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | sed 's/v//')
-          wget -q https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_amd64
+          wget -q https://github.com/gruntwork-io/terragrunt/releases/download/v0.67.2/terragrunt_linux_amd64
           chmod +x terragrunt_linux_amd64
           sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
           terragrunt --version
@@ -48,7 +47,6 @@ jobs:
           TF_VAR_environment: "dev"
           TF_INPUT: "false"
           TF_IN_AUTOMATION: "true"
-          TF_LOG: "error"
       
       - name: Terragrunt Apply DEV
         working-directory: terraform/projects/dev
@@ -58,7 +56,6 @@ jobs:
           TF_VAR_environment: "dev"
           TF_INPUT: "false"
           TF_IN_AUTOMATION: "true"
-          TF_LOG: "error"
       
       - name: Notify Slack Success
         if: success()
