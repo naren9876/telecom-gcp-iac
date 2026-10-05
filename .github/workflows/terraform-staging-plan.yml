@@ -37,6 +37,7 @@ jobs:
           TF_VAR_environment: staging
           TF_INPUT: "false"
           TF_IN_AUTOMATION: "true"
+          TF_DISABLE_REMOTE_TERRAFORM_VERSION_CHECK: "true"
       - if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:

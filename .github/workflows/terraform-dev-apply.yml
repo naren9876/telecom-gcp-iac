@@ -32,6 +32,7 @@ jobs:
           TF_VAR_environment: dev
           TF_INPUT: "false"
           TF_IN_AUTOMATION: "true"
+          TF_DISABLE_REMOTE_TERRAFORM_VERSION_CHECK: "true"
       - if: always()
         run: |
           echo "### Terraform DEV Apply" >> $GITHUB_STEP_SUMMARY
