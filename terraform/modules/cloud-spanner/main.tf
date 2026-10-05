@@ -21,7 +21,7 @@ resource "google_project_service" "spanner" {
 resource "google_spanner_instance" "telecom" {
   name             = "telecom-${var.environment}"
   display_name     = "telecom-${var.environment}"
-  config           = "multi-region-us-central1-us-east1"
+  config           = "regional-us-central1"
   processing_units = var.spanner_processing_units
   
   labels = {

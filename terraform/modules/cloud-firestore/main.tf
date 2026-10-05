@@ -21,7 +21,6 @@ resource "google_firestore_database" "telecom" {
   location_id         = var.firestore_region
   type                = "FIRESTORE_NATIVE"
   concurrency_mode    = "OPTIMISTIC"
-  delete_protection_enabled = var.environment == "prod" ? true : false
   
   depends_on = [google_project_service.firestore]
 }
