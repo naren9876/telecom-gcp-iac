@@ -27,7 +27,6 @@ resource "google_project_service" "required_apis" {
 # Create Workload Identity Pool for GitHub
 resource "google_iam_workload_identity_pool" "github_dev" {
   workload_identity_pool_id = "github"
-  location                  = "global"
   display_name              = "GitHub Actions"
   description               = "Workload Identity Pool for GitHub Actions CI/CD"
   
@@ -39,7 +38,6 @@ resource "google_iam_workload_identity_pool_provider" "github_dev" {
   workload_identity_pool_id          = google_iam_workload_identity_pool.github_dev.workload_identity_pool_id
   workload_identity_pool_provider_id = "github-provider"
   display_name                       = "GitHub Provider"
-  location                           = "global"
   
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
@@ -108,7 +106,6 @@ resource "google_service_account_iam_binding" "cicd_dev_workload_identity" {
 # Staging Environment Setup
 resource "google_iam_workload_identity_pool" "github_staging" {
   workload_identity_pool_id = "github"
-  location                  = "global"
   display_name              = "GitHub Actions Staging"
   description               = "Workload Identity Pool for GitHub Actions CI/CD - Staging"
   
@@ -119,7 +116,6 @@ resource "google_iam_workload_identity_pool_provider" "github_staging" {
   workload_identity_pool_id          = google_iam_workload_identity_pool.github_staging.workload_identity_pool_id
   workload_identity_pool_provider_id = "github-provider"
   display_name                       = "GitHub Provider Staging"
-  location                           = "global"
   
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
