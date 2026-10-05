@@ -41,6 +41,7 @@ jobs:
         working-directory: terraform/projects/dev
         run: terragrunt run-all plan --terragrunt-non-interactive
         env:
+      TF_DISABLE_REMOTE_TERRAFORM_VERSION_CHECK: "true"
           TF_VAR_project_id: "telecom-dev-123"
           TF_VAR_environment: "dev"
       
@@ -48,6 +49,7 @@ jobs:
         working-directory: terraform/projects/dev
         run: terragrunt run-all apply --terragrunt-non-interactive -auto-approve
         env:
+      TF_DISABLE_REMOTE_TERRAFORM_VERSION_CHECK: "true"
           TF_VAR_project_id: "telecom-dev-123"
           TF_VAR_environment: "dev"
       
