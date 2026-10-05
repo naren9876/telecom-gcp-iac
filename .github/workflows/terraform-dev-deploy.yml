@@ -23,10 +23,13 @@ jobs:
         with:
           terraform_version: 1.7.5
       
-      - name: Install Terragrunt via Go
-        run: |
-          go install github.com/gruntwork-io/terragrunt@v0.55.12
-          terragrunt --version
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21
+
+      - name: Install Terragrunt
+        run: go install github.com/gruntwork-io/terragrunt@v0.55.12
       
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
