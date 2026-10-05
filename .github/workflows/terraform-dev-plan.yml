@@ -17,12 +17,12 @@ jobs:
       - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.7.5
-      - uses: actions/setup-go@v4
-        with:
-          go-version: 1.21
-      - run: |
-          go install github.com/gruntwork-io/terragrunt@v0.55.12
-          echo "$HOME/go/bin" >> $GITHUB_PATH
+      - name: Install Terragrunt
+        run: |
+          wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.55.12/terragrunt_linux_amd64 -O /tmp/terragrunt
+          chmod +x /tmp/terragrunt
+          sudo mv /tmp/terragrunt /usr/local/bin/
+          terragrunt --version
       - uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER_DEV }}
@@ -30,7 +30,8 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v1
       - name: Terragrunt Plan DEV
         working-directory: terraform/projects/dev
-        run: terragrunt run-all plan --terragrunt-non-interactive 2>&1 | tee plan-output.txt
+        run: |
+          terragrunt run-all plan --terragrunt-non-interactive 2>&1 | tee plan-output.txt
         env:
           TF_VAR_project_id: telecom-dev-123
           TF_VAR_environment: dev

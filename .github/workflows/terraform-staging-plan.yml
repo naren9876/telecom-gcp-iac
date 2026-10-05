@@ -1,76 +1,57 @@
-name: Terraform Staging Plan
-
+name: Terraform STAGING Plan
 on:
-  pull_request:
-    paths:
-      - 'terraform/**'
   push:
     branches:
-      - main
+      - staging
     paths:
-      - 'terraform/**'
-
+      - terraform/**
+      - .github/workflows/terraform-staging-*.yml
 jobs:
   plan:
     runs-on: ubuntu-latest
     permissions:
-      contents: 'read'
-      id-token: 'write'
-      pull-requests: 'write'
-    
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.6.0
-      
-      - name: Setup Terragrunt
-        uses: autero1/action-terragrunt@v1.3.2
-        with:
-          terragrunt_version: 0.52.0
-      
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+          terraform_version: 1.7.5
+      - name: Install Terragrunt
+        run: |
+          wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.55.12/terragrunt_linux_amd64 -O /tmp/terragrunt
+          chmod +x /tmp/terragrunt
+          sudo mv /tmp/terragrunt /usr/local/bin/
+          terragrunt --version
+      - uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER_STAGING }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_STAGING }}
-      
-      - name: Terragrunt Plan Staging
+      - uses: google-github-actions/setup-gcloud@v1
+      - name: Terragrunt Plan STAGING
         working-directory: terraform/projects/staging
-        run: terragrunt run-all plan --terragrunt-non-interactive -out=tfplan
+        run: |
+          terragrunt run-all plan --terragrunt-non-interactive 2>&1 | tee plan-output.txt
         env:
-          TF_VAR_project_id: "telecom-staging-456"
-          TF_VAR_environment: "staging"
-      
-      - name: Comment PR with Plan
-        if: github.event_name == 'pull_request'
+          TF_VAR_project_id: telecom-staging-456
+          TF_VAR_environment: staging
+          TF_INPUT: "false"
+          TF_IN_AUTOMATION: "true"
+      - if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('plan-output.txt', 'utf8');
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '✅ Terraform Staging plan generated. Review and trigger manual apply workflow.'
+              body: '```\n' + plan.substring(0, 65000) + '\n```'
             })
-      
-      - name: Notify Slack Plan
-        uses: slackapi/slack-github-action@v1
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: |
-            {
-              "text": "📋 Terraform Staging plan ready for review",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Terraform Staging Plan*\nStatus: 📋 Ready for Review\nTrigger manual apply workflow to proceed"
-                  }
-                }
-              ]
-            }
+      - if: always()
+        run: |
+          echo "### Terraform STAGING Plan" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Plan generated successfully" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Step:** Review the plan above, then manually trigger the apply workflow" >> $GITHUB_STEP_SUMMARY
+          echo "📋 [Run STAGING Apply](https://github.com/${{ github.repository }}/actions/workflows/terraform-staging-apply.yml)" >> $GITHUB_STEP_SUMMARY
