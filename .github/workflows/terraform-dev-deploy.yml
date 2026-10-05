@@ -21,14 +21,18 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.8.0
+          terraform_version: 1.8.7
       
       - name: Install Terragrunt
         run: |
-          wget https://github.com/gruntwork-io/terragrunt/releases/download/v0.59.0/terragrunt_linux_amd64
+          wget -q https://github.com/gruntwork-io/terragrunt/releases/download/v0.59.0/terragrunt_linux_amd64
           chmod +x terragrunt_linux_amd64
           sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
-          terragrunt --version
+      
+      - name: Suppress Terraform Version Check
+        run: |
+          mkdir -p ~/.terraformrc.d
+          echo 'disable_checkpoint = true' >> ~/.terraformrc
       
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
@@ -41,19 +45,27 @@ jobs:
       
       - name: Terragrunt Plan DEV
         working-directory: terraform/projects/dev
-        run: terragrunt run-all plan --terragrunt-non-interactive
+        run: |
+          terragrunt run-all plan --terragrunt-non-interactive 2>&1 | grep -v "Your version of Terraform is out of date"
+        shell: bash
         env:
           TF_VAR_project_id: "telecom-dev-123"
           TF_VAR_environment: "dev"
           TF_INPUT: "false"
+          TF_IN_AUTOMATION: "true"
+          CHECKPOINT_DISABLE: "true"
       
       - name: Terragrunt Apply DEV
         working-directory: terraform/projects/dev
-        run: terragrunt run-all apply --terragrunt-non-interactive -auto-approve
+        run: |
+          terragrunt run-all apply --terragrunt-non-interactive -auto-approve 2>&1 | grep -v "Your version of Terraform is out of date"
+        shell: bash
         env:
           TF_VAR_project_id: "telecom-dev-123"
           TF_VAR_environment: "dev"
           TF_INPUT: "false"
+          TF_IN_AUTOMATION: "true"
+          CHECKPOINT_DISABLE: "true"
       
       - name: Notify Slack Success
         if: success()
