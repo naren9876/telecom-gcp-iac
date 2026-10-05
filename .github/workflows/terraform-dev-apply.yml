@@ -1,0 +1,41 @@
+name: Terraform DEV Apply
+on:
+  workflow_dispatch:
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.5
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.21
+      - run: |
+          go install github.com/gruntwork-io/terragrunt@v0.55.12
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+      - uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER_DEV }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_DEV }}
+      - uses: google-github-actions/setup-gcloud@v1
+      - name: Terragrunt Apply DEV
+        working-directory: terraform/projects/dev
+        run: terragrunt run-all apply --terragrunt-non-interactive -auto-approve
+        env:
+          TF_VAR_project_id: telecom-dev-123
+          TF_VAR_environment: dev
+          TF_INPUT: "false"
+          TF_IN_AUTOMATION: "true"
+      - if: always()
+        run: |
+          echo "### Terraform DEV Apply" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Apply completed" >> $GITHUB_STEP_SUMMARY
+          echo "**Changes Applied to DEV Environment**" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "Author: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
