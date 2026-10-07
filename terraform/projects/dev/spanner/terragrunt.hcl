@@ -11,6 +11,10 @@ locals {
 }
 
 inputs = {
-  environment = "dev"
-  project_id  = local.envvars.locals.gcp_dev_project_id
+  environment              = "dev"
+  project_id               = local.envvars.locals.gcp_dev_project_id
+  spanner_instance_id      = "telecom-spanner-dev"  # Will become telecom-spanner-dev
+  spanner_database_id      = "telecom-db"
+  spanner_config           = "regional-us-central1"
+  spanner_processing_units = 3000
 }

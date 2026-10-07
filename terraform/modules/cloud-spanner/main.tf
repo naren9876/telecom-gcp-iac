@@ -19,35 +19,16 @@ resource "google_project_service" "spanner" {
 
 # Create Spanner Instance
 resource "google_spanner_instance" "telecom" {
-  name             = "telecom-${var.environment}"
-  display_name     = "telecom-${var.environment}"
-  config           = "regional-us-central1"
+  name             = var.spanner_instance_id
+  display_name     = "Telecom Spanner - ${var.environment}"
+  config           = var.spanner_config
   processing_units = var.spanner_processing_units
-  
+
   labels = {
     environment = var.environment
-    managed_by  = "terraform"
+    project     = "telecom"
+    phase       = "4"
   }
-  
+
   depends_on = [google_project_service.spanner]
-}
-
-# Create Spanner Database
-resource "google_spanner_database" "telecom" {
-  instance             = google_spanner_instance.telecom.name
-  name                 = "telecom-db-${var.environment}"
-  version_retention_period = "3d"
-  deletion_protection  = var.environment == "prod" ? true : false
-  
-  depends_on = [google_spanner_instance.telecom]
-}
-
-output "spanner_instance_id" {
-  value       = google_spanner_instance.telecom.id
-  description = "Spanner instance ID"
-}
-
-output "spanner_database_id" {
-  value       = google_spanner_database.telecom.id
-  description = "Spanner database ID"
 }
